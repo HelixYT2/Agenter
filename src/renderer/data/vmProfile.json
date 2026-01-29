@@ -1,0 +1,61 @@
+{
+  "name": "Helix Sandbox VM",
+  "description": "Isolated VM used by the agent. Provides a remote desktop, shell, and file access in a controlled sandbox.",
+  "capabilities": [
+    "browser",
+    "shell",
+    "files"
+  ],
+  "controlSchema": {
+    "version": "0.1",
+    "tools": {
+      "browser": {
+        "actions": [
+          "open_url",
+          "click",
+          "type",
+          "scroll",
+          "screenshot"
+        ],
+        "payload": {
+          "selector": "string",
+          "text": "string",
+          "url": "string",
+          "direction": "up|down",
+          "amount": "number"
+        }
+      },
+      "shell": {
+        "actions": [
+          "run_command",
+          "write_file",
+          "read_file"
+        ],
+        "payload": {
+          "command": "string",
+          "path": "string",
+          "contents": "string"
+        }
+      },
+      "files": {
+        "actions": [
+          "list",
+          "upload",
+          "download",
+          "move",
+          "delete"
+        ],
+        "payload": {
+          "path": "string",
+          "destination": "string"
+        }
+      }
+    }
+  },
+  "guardrails": [
+    "Read-only actions are executed automatically.",
+    "Write, destructive, or external actions require explicit user confirmation.",
+    "Sensitive inputs must be entered during Take Over mode.",
+    "Never access host files outside the sandbox without explicit permission."
+  ]
+}
