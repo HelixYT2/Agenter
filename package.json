@@ -1,0 +1,43 @@
+{
+  "name": "helix-agent",
+  "version": "0.1.0",
+  "description": "Local Agent AI desktop app scaffold with glass UI.",
+  "main": "src/main/main.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "electron:dev": "concurrently -k \"vite\" \"wait-on tcp:5173 && electron .\"",
+    "build": "vite build",
+    "electron:build": "npm run build && electron-builder",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "concurrently": "^8.2.2",
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3",
+    "eslint": "^9.7.0",
+    "eslint-plugin-react": "^7.35.0",
+    "vite": "^5.4.6",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.helix.agent",
+    "productName": "Helix Agent",
+    "files": [
+      "dist/**/*",
+      "src/main/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "buildResources": "assets"
+    },
+    "win": {
+      "target": "nsis"
+    }
+  }
+}
