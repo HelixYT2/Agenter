@@ -28,6 +28,7 @@ const defaultState = {
       title: "Welcome",
       projectId: "project-default",
       model: "",
+      updatedAt: Date.now(),
       messages: [
         {
           id: "msg-welcome",
@@ -63,7 +64,341 @@ const scheduleOptions = [
   { value: "custom", label: "Custom" }
 ];
 
-const toolSections = ["Browser", "Shell", "Files", "Network"];
+const toolSections = ["Browser", "Shell", "Files"];
+
+const RunStatusLabel = {
+  idle: "Idle",
+  running: "Running",
+  paused: "Paused",
+  awaiting_confirmation: "Awaiting confirmation",
+  awaiting_takeover: "Awaiting takeover",
+  stopped: "Stopped",
+  complete: "Complete",
+  error: "Error"
+};
+
+const formatTime = (timestamp) =>
+  new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+const Sidebar = ({
+  chats,
+  projects,
+  selectedChatId,
+  selectedProjectId,
+  onNewChat,
+  onChatSelect,
+  onProjectSelect,
+  onCreateProject,
+  onSettings,
+  onSchedules,
+  collapsed,
+  onToggleCollapse,
+  searchQuery,
+  onSearchChange
+}) => (
+  <aside className={`sidebar ${collapsed ? "sidebar--collapsed" : ""}`}>
+    <div className="sidebar__header">
+      <div className="sidebar__brand">
+        <p className="brand__title">Helix Agent</p>
+        <p className="brand__subtitle">Local AI Workspace</p>
+      </div>
+      <button
+        className="ghost icon-button"
+        aria-label="Collapse sidebar"
+        onClick={onToggleCollapse}
+      >
+        {collapsed ? ">" : "<"}
+      </button>
+    </div>
+    <button className="primary" onClick={onNewChat}>
+      + New chat
+    </button>
+    <div className="sidebar__search">
+      <input
+        placeholder="Search chats"
+        aria-label="Search chats"
+        value={searchQuery}
+        onChange={(event) => onSearchChange(event.target.value)}
+      />
+    </div>
+    <div className="sidebar__section">
+      <p className="sidebar__label">Recent</p>
+      <div className="sidebar__list">
+        {chats.map((chat) => (
+          <button
+            key={chat.id}
+            className={`list-button ${chat.id === selectedChatId ? "active" : ""}`}
+            onClick={() => onChatSelect(chat.id)}
+          >
+            <span className="list-title">{chat.title || "Untitled"}</span>
+            <span className="list-time">{formatTime(chat.updatedAt || chat.messages.at(-1)?.createdAt)}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+    <div className="sidebar__section">
+      <div className="sidebar__section-header">
+        <p className="sidebar__label">Projects</p>
+        <button className="ghost" onClick={onCreateProject}>
+          +
+        </button>
+      </div>
+      <div className="sidebar__list">
+        {projects.map((project) => (
+          <button
+            key={project.id}
+            className={`list-button ${project.id === selectedProjectId ? "active" : ""}`}
+            onClick={() => onProjectSelect(project.id)}
+          >
+            <span className="list-title">{project.name}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+    <div className="sidebar__footer">
+      <button className="list-button" onClick={onSchedules}>
+        Schedules
+      </button>
+      <button className="list-button" onClick={onSettings}>
+        Settings
+      </button>
+    </div>
+  </aside>
+);
+
+const ChatHeader = ({
+  title,
+  projectName,
+  connectionStatus,
+  model,
+  models,
+  agentMode,
+  onModelChange,
+  onModeChange
+}) => (
+  <header className="chat-header">
+    <div>
+      <h1>{title}</h1>
+      <p>{projectName ? `Project: ${projectName}` : "No project"}</p>
+    </div>
+    <div className="chat-header__actions">
+      <div className={`status-pill ${connectionStatus}`}>
+        {connectionStatus === "connected" ? "Model connected" : "Disconnected"}
+      </div>
+      <select value={model} onChange={(event) => onModelChange(event.target.value)}>
+        <option value="">Select model</option>
+        {models.map((item) => (
+          <option key={item.id} value={item.id}>
+            {item.id}
+          </option>
+        ))}
+      </select>
+      <select value={agentMode ? "agent" : "normal"} onChange={(event) => onModeChange(event.target.value)}>
+        <option value="normal">Normal</option>
+        <option value="agent">Agent</option>
+      </select>
+    </div>
+  </header>
+);
+
+const MessageList = ({ messages, onCopy, onRetry, onSchedule, isGenerating }) => (
+  <div className="timeline">
+    {messages.map((message) => (
+      <div key={message.id} className={`message message--${message.role}`}>
+        {message.role === "tool" ? (
+          <details className="tool-card">
+            <summary>Tool output</summary>
+            <div
+              className="message__content"
+              dangerouslySetInnerHTML={{ __html: renderMarkdown(message.content) }}
+            />
+          </details>
+        ) : (
+          <div
+            className="message__content"
+            dangerouslySetInnerHTML={{ __html: renderMarkdown(message.content) }}
+          />
+        )}
+        {message.role === "assistant" && (
+          <div className="message__actions">
+            <button className="ghost" onClick={() => onCopy(message.content)}>
+              Copy
+            </button>
+            <button className="ghost" onClick={() => onRetry(message.id)}>
+              Retry
+            </button>
+            <button className="ghost" onClick={() => onSchedule(message.id)}>
+              Schedule
+            </button>
+          </div>
+        )}
+      </div>
+    ))}
+    {isGenerating && <div className="message message--assistant">Generating…</div>}
+  </div>
+);
+
+const Composer = ({
+  value,
+  onChange,
+  onSend,
+  onKeyDown,
+  onToggleAgent,
+  agentMode,
+  isGenerating,
+  onStopGenerating,
+  commandMenu,
+  onCommandSelect
+}) => (
+  <div className="composer">
+    {commandMenu.open && (
+      <div className="command-menu">
+        {commandMenu.items.map((item, index) => (
+          <button
+            key={item.label}
+            className={`command-item ${commandMenu.activeIndex === index ? "active" : ""}`}
+            onClick={() => onCommandSelect(item)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+    )}
+    <div className="composer__input">
+      <textarea
+        rows={3}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        onKeyDown={onKeyDown}
+        placeholder="Ask Helix anything..."
+        aria-label="Message composer"
+      />
+      {agentMode && <span className="mode-pill">Agent Mode</span>}
+    </div>
+    <div className="composer__actions">
+      <button className="ghost" aria-label="Attach file">
+        +
+      </button>
+      <button className="ghost" onClick={onToggleAgent} aria-label="Toggle Agent Mode">
+        /agent
+      </button>
+      {isGenerating ? (
+        <button className="ghost danger" onClick={onStopGenerating}>
+          Stop
+        </button>
+      ) : (
+        <button className="primary" onClick={onSend}>
+          Send
+        </button>
+      )}
+    </div>
+  </div>
+);
+
+const AgentPanel = ({
+  runStatus,
+  runEvents,
+  pendingConfirmation,
+  onConfirm,
+  onDeny,
+  onEditPayload,
+  onPause,
+  onResume,
+  onStop,
+  onTakeover,
+  takeoverRequested
+}) => (
+  <aside className="run-panel">
+    <div className="run-panel__header">
+      <h2>Agent Run</h2>
+      <span className={`pill ${runStatus}`}>{RunStatusLabel[runStatus] || "Idle"}</span>
+    </div>
+    <div className="run-panel__controls">
+      <button className="ghost" onClick={onPause}>
+        Pause
+      </button>
+      <button className="ghost" onClick={onTakeover}>
+        Take over
+      </button>
+      <button className="ghost danger" onClick={onStop}>
+        Stop
+      </button>
+      <button className="ghost" onClick={onResume}>
+        Resume
+      </button>
+    </div>
+    <div className="run-panel__body">
+      <div className="run-panel__section">
+        <h3>Activity</h3>
+        <ul>
+          {runEvents.map((event) => (
+            <li key={`${event.type}-${event.timestamp}`}>{event.label || event.type.replace(/_/g, " ")}</li>
+          ))}
+        </ul>
+      </div>
+
+      {takeoverRequested && (
+        <div className="callout">
+          <strong>Take over requested</strong>
+          <p>Agent needs you to complete a sensitive action in the mock browser.</p>
+        </div>
+      )}
+
+      {pendingConfirmation && (
+        <div className="confirmation">
+          <h3>Confirmation required</h3>
+          <p>{pendingConfirmation.step.action}</p>
+          <span>{pendingConfirmation.why}</span>
+          <details className="payload">
+            <summary>Action payload</summary>
+            <pre>{pendingConfirmation.payloadText}</pre>
+          </details>
+          {pendingConfirmation.isEditing && (
+            <textarea
+              className="payload-editor"
+              value={pendingConfirmation.payloadText}
+              onChange={(event) => onEditPayload(event.target.value)}
+            />
+          )}
+          <div className="inline">
+            <button className="primary" onClick={onConfirm}>
+              Confirm
+            </button>
+            <button className="ghost" onClick={onDeny}>
+              Deny
+            </button>
+            <button className="ghost" onClick={pendingConfirmation.onToggleEdit}>
+              Edit action
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="run-panel__section">
+        <h3>Tool outputs</h3>
+        {toolSections.map((tool) => (
+          <details key={tool} className="tool-output">
+            <summary>{tool} preview (mock)</summary>
+            <p>Mock output placeholder. Real tool wiring coming soon.</p>
+          </details>
+        ))}
+      </div>
+
+      <div className="run-panel__section">
+        <h3>Sandbox integration</h3>
+        <p className="muted">Coming soon. VM controls are disabled until integration is complete.</p>
+        <div className="inline">
+          <button className="ghost" disabled>
+            Configure
+          </button>
+          <button className="ghost" disabled>
+            Open console
+          </button>
+        </div>
+      </div>
+    </div>
+  </aside>
+);
 
 export default function App() {
   const [state, setState] = useState(() => {
@@ -90,21 +425,27 @@ export default function App() {
   const [runStatus, setRunStatus] = useState("idle");
   const [pendingConfirmation, setPendingConfirmation] = useState(null);
   const [takeOverMode, setTakeOverMode] = useState(false);
+  const [takeoverRequested, setTakeoverRequested] = useState(false);
   const [activeView, setActiveView] = useState("chat");
-  const [activeToolTab, setActiveToolTab] = useState("Browser");
   const [settingsPanel, setSettingsPanel] = useState("general");
   const [scheduleDraft, setScheduleDraft] = useState(null);
   const [testMessage, setTestMessage] = useState("");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [commandMenu, setCommandMenu] = useState({ open: false, activeIndex: 0, items: [] });
 
   const eventBus = useMemo(() => createEventBus(), []);
   const runnerRef = useRef(createAgentRunner({ bus: eventBus }));
-  const searchRef = useRef(null);
-  const composerRef = useRef(null);
+  const abortRef = useRef(null);
 
   const selectedChat = state.chats.find((chat) => chat.id === state.selectedChatId);
   const selectedProject = state.projects.find((project) => project.id === state.selectedProjectId);
   const currentModel = selectedChat?.model || selectedProject?.defaultModel || models[0]?.id || "";
+
+  const filteredChats = state.chats.filter((chat) =>
+    chat.title?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   useEffect(() => {
     saveState(state);
@@ -112,7 +453,7 @@ export default function App() {
 
   useEffect(() => {
     const unsubscribe = eventBus.subscribe((event) => {
-      setRunEvents((prev) => [event, ...prev].slice(0, 100));
+      setRunEvents((prev) => [{ ...event, label: event.label }, ...prev].slice(0, 80));
       if (event.type === "run_started") {
         setRunStatus("running");
       }
@@ -134,9 +475,12 @@ export default function App() {
         setRunStatus("error");
       }
       if (event.type === "step_requires_confirmation") {
+        setRunStatus("awaiting_confirmation");
         setPendingConfirmation({
           step: event.step,
-          why: event.step?.why || "This action may modify external state."
+          why: event.step?.why || "This action may modify external state.",
+          payloadText: JSON.stringify(event.step?.payload || {}, null, 2),
+          isEditing: false
         });
       }
       if (event.type === "step_output" && selectedChat) {
@@ -152,6 +496,17 @@ export default function App() {
           ]
         });
       }
+      if (event.type === "takeover_requested") {
+        setRunStatus("awaiting_takeover");
+        setTakeoverRequested(true);
+      }
+      if (event.type === "takeover_started") {
+        setRunStatus("paused");
+      }
+      if (event.type === "takeover_ended") {
+        setRunStatus("running");
+        setTakeoverRequested(false);
+      }
     });
     return () => unsubscribe();
   }, [eventBus, selectedChat]);
@@ -161,7 +516,6 @@ export default function App() {
       const isCmdK = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k";
       if (isCmdK) {
         event.preventDefault();
-        searchRef.current?.focus();
       }
       if (event.key === "Escape") {
         setScheduleDraft(null);
@@ -216,22 +570,37 @@ export default function App() {
     });
   };
 
-  const handleSend = async () => {
-    if (!composerValue.trim() || !selectedChat) {
+  const buildPromptMessages = (messages, project) => {
+    const systemMessages = project?.systemInstructions
+      ? [{ role: "system", content: project.systemInstructions }]
+      : [];
+    return [...systemMessages, ...messages.map(({ role, content }) => ({ role, content }))];
+  };
+
+  const handleSend = async (overrideContent) => {
+    if (!selectedChat) {
+      return;
+    }
+    const content = overrideContent || composerValue.trim();
+    if (!content) {
       return;
     }
     const userMessage = {
       id: createId("msg"),
       role: "user",
-      content: composerValue.trim(),
+      content,
       createdAt: Date.now()
     };
     const updatedMessages = [...selectedChat.messages, userMessage];
-    updateChat(selectedChat.id, { messages: updatedMessages, title: selectedChat.title || "New chat" });
+    updateChat(selectedChat.id, {
+      messages: updatedMessages,
+      title: selectedChat.title || "New chat",
+      updatedAt: Date.now()
+    });
     setComposerValue("");
 
     if (agentMode) {
-      setActiveView("run");
+      setActiveView("chat");
       await startAgentRun(userMessage.content);
       return;
     }
@@ -249,6 +618,9 @@ export default function App() {
       ]
     });
 
+    setIsGenerating(true);
+    abortRef.current = new AbortController();
+
     try {
       await streamChatCompletion({
         baseUrl: state.settings.baseUrl,
@@ -258,6 +630,7 @@ export default function App() {
           messages: buildPromptMessages(updatedMessages, selectedProject),
           temperature: 0.3
         },
+        signal: abortRef.current.signal,
         onToken: (token) => {
           setState((prev) => ({
             ...prev,
@@ -270,22 +643,20 @@ export default function App() {
         }
       });
     } catch (error) {
-      setState((prev) => ({
-        ...prev,
-        chats: prev.chats.map((chat) =>
-          chat.id === selectedChat.id
-            ? { ...chat, messages: appendTokenToMessage(chat.messages, assistantId, `\n\nError: ${error.message}`) }
-            : chat
-        )
-      }));
+      if (error.name !== "AbortError") {
+        setState((prev) => ({
+          ...prev,
+          chats: prev.chats.map((chat) =>
+            chat.id === selectedChat.id
+              ? { ...chat, messages: appendTokenToMessage(chat.messages, assistantId, `\n\nError: ${error.message}`) }
+              : chat
+          )
+        }));
+      }
+    } finally {
+      setIsGenerating(false);
+      abortRef.current = null;
     }
-  };
-
-  const buildPromptMessages = (messages, project) => {
-    const systemMessages = project?.systemInstructions
-      ? [{ role: "system", content: project.systemInstructions }]
-      : [];
-    return [...systemMessages, ...messages.map(({ role, content }) => ({ role, content }))];
   };
 
   const startAgentRun = async (goal) => {
@@ -342,9 +713,62 @@ export default function App() {
   };
 
   const handleKeyDown = (event) => {
+    if (commandMenu.open) {
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        setCommandMenu((prev) => ({
+          ...prev,
+          activeIndex: Math.min(prev.activeIndex + 1, prev.items.length - 1)
+        }));
+        return;
+      }
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        setCommandMenu((prev) => ({
+          ...prev,
+          activeIndex: Math.max(prev.activeIndex - 1, 0)
+        }));
+        return;
+      }
+      if (event.key === "Enter") {
+        event.preventDefault();
+        const selected = commandMenu.items[commandMenu.activeIndex];
+        if (selected) {
+          handleCommandSelect(selected);
+        }
+        return;
+      }
+      if (event.key === "Escape") {
+        setCommandMenu({ open: false, activeIndex: 0, items: [] });
+        return;
+      }
+    }
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       handleSend();
+      return;
+    }
+    if (event.key === "/") {
+      setCommandMenu({
+        open: true,
+        activeIndex: 0,
+        items: [{ label: "/agent", action: "agent" }]
+      });
+    }
+  };
+
+  const handleCommandSelect = (command) => {
+    if (command.action === "agent") {
+      setAgentMode(true);
+      setComposerValue("");
+      setCommandMenu({ open: false, activeIndex: 0, items: [] });
+    }
+  };
+
+  const handleComposerChange = (value) => {
+    setComposerValue(value);
+    if (!value.startsWith("/")) {
+      setCommandMenu({ open: false, activeIndex: 0, items: [] });
     }
   };
 
@@ -370,12 +794,30 @@ export default function App() {
     }
   };
 
-  const handleConfirmStep = (decision) => {
+  const handleConfirmStep = () => {
+    if (!pendingConfirmation) {
+      return;
+    }
+    let payload = null;
+    try {
+      payload = JSON.parse(pendingConfirmation.payloadText || "{}");
+    } catch (error) {
+      payload = pendingConfirmation.step.payload;
+    }
+    eventBus.emit({
+      type: "step_confirmed",
+      stepId: pendingConfirmation.step.id,
+      payload
+    });
+    setPendingConfirmation(null);
+  };
+
+  const handleDenyStep = () => {
     if (!pendingConfirmation) {
       return;
     }
     eventBus.emit({
-      type: decision === "confirm" ? "step_confirmed" : "step_denied",
+      type: "step_denied",
       stepId: pendingConfirmation.step.id
     });
     setPendingConfirmation(null);
@@ -409,6 +851,7 @@ export default function App() {
           title: "New chat",
           projectId: prev.selectedProjectId,
           model: prev.projects.find((project) => project.id === prev.selectedProjectId)?.defaultModel || "",
+          updatedAt: Date.now(),
           messages: []
         },
         ...prev.chats
@@ -464,102 +907,67 @@ export default function App() {
     updateChat(selectedChat.id, { model: value });
   };
 
+  const handleRetry = (messageId) => {
+    if (!selectedChat) return;
+    const messageIndex = selectedChat.messages.findIndex((message) => message.id === messageId);
+    const previousUser = [...selectedChat.messages]
+      .slice(0, messageIndex)
+      .reverse()
+      .find((message) => message.role === "user");
+    if (previousUser) {
+      handleSend(previousUser.content);
+    }
+  };
+
+  const handleStopGenerating = () => {
+    abortRef.current?.abort();
+  };
+
+  const handleTakeoverStart = () => {
+    setTakeOverMode(true);
+    runnerRef.current.startTakeover();
+  };
+
+  const handleTakeoverEnd = () => {
+    setTakeOverMode(false);
+    runnerRef.current.endTakeover();
+  };
+
+  const handleModeChange = (value) => {
+    setAgentMode(value === "agent");
+  };
+
   return (
     <div className={`app ${sidebarCollapsed ? "app--collapsed" : ""}`}>
-      <aside className="sidebar">
-        <div className="sidebar__header">
-          <div>
-            <p className="brand__title">Helix Agent</p>
-            <p className="brand__subtitle">Local AI Workspace</p>
-          </div>
-          <button
-            className="ghost icon-button"
-            aria-label="Collapse sidebar"
-            onClick={() => setSidebarCollapsed((prev) => !prev)}
-          >
-            {sidebarCollapsed ? ">" : "<"}
-          </button>
-        </div>
-        <button className="primary" onClick={handleNewChat}>
-          + New chat
-        </button>
-        <div className="sidebar__search">
-          <input ref={searchRef} placeholder="Search chats" aria-label="Search chats" />
-        </div>
-        <div className="sidebar__section">
-          <p className="sidebar__label">Recent chats</p>
-          <ul>
-            {state.chats.map((chat) => (
-              <li key={chat.id}>
-                <button
-                  className={`list-button ${chat.id === selectedChat?.id ? "active" : ""}`}
-                  onClick={() => handleChatSelect(chat.id)}
-                >
-                  <span>{chat.title || "Untitled"}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="sidebar__section">
-          <div className="sidebar__section-header">
-            <p className="sidebar__label">Projects</p>
-            <button className="ghost" onClick={handleCreateProject}>
-              +
-            </button>
-          </div>
-          <ul>
-            {state.projects.map((project) => (
-              <li key={project.id}>
-                <button
-                  className={`list-button ${project.id === selectedProject?.id ? "active" : ""}`}
-                  onClick={() => handleProjectSelect(project.id)}
-                >
-                  <span>{project.name}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="sidebar__section">
-          <p className="sidebar__label">Library</p>
-          <button className="list-button" onClick={() => setActiveView("schedules")}>
-            Schedules
-          </button>
-          <button className="list-button" onClick={() => setActiveView("settings")}>
-            Settings
-          </button>
-        </div>
-      </aside>
+      <Sidebar
+        chats={filteredChats}
+        projects={state.projects}
+        selectedChatId={state.selectedChatId}
+        selectedProjectId={state.selectedProjectId}
+        onNewChat={handleNewChat}
+        onChatSelect={handleChatSelect}
+        onProjectSelect={handleProjectSelect}
+        onCreateProject={handleCreateProject}
+        onSettings={() => setActiveView("settings")}
+        onSchedules={() => setActiveView("schedules")}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
 
-      <section className="main">
-        <header className="topbar">
-          <div>
-            <h1>{selectedChat?.title || "New chat"}</h1>
-            <p>{selectedProject ? `Project: ${selectedProject.name}` : "No project"}</p>
-          </div>
-          <div className="topbar__actions">
-            <div className={`status-pill ${connectionStatus}`}>
-              {connectionStatus === "connected" ? "Model connected" : "Disconnected"}
-            </div>
-            <select value={currentModel} onChange={(event) => handleModelChange(event.target.value)}>
-              <option value="">Select model</option>
-              {models.map((model) => (
-                <option key={model.id} value={model.id}>
-                  {model.id}
-                </option>
-              ))}
-            </select>
-            <label className="toggle">
-              <input
-                type="checkbox"
-                checked={agentMode}
-                onChange={(event) => setAgentMode(event.target.checked)}
-              />
-              <span>Agent Mode</span>
-            </label>
-          </div>
-        </header>
+      <main className="main">
+        <ChatHeader
+          title={selectedChat?.title || "New chat"}
+          projectName={selectedProject?.name}
+          connectionStatus={connectionStatus}
+          model={currentModel}
+          models={models}
+          agentMode={agentMode}
+          onModelChange={handleModelChange}
+          onModeChange={handleModeChange}
+        />
+
         <div className="mobile-tabs" role="tablist">
           <button
             className={`tab ${activeView === "chat" ? "active" : ""}`}
@@ -583,85 +991,31 @@ export default function App() {
 
         <div className="content">
           {activeView === "chat" && (
-            <div className="chat-panel">
-              <div className="timeline">
-                {selectedChat?.messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`message message--${message.role}`}
-                    aria-live={message.role === "assistant" ? "polite" : "off"}
-                  >
-                    {message.role === "tool" ? (
-                      <details className="tool-card">
-                        <summary>Tool output</summary>
-                        <div
-                          className="message__content"
-                          dangerouslySetInnerHTML={{ __html: renderMarkdown(message.content) }}
-                        />
-                      </details>
-                    ) : (
-                      <div
-                        className="message__content"
-                        dangerouslySetInnerHTML={{ __html: renderMarkdown(message.content) }}
-                      />
-                    )}
-                    {message.role === "assistant" && (
-                      <div className="message__actions">
-                        <button
-                          className="ghost"
-                          onClick={() => navigator.clipboard.writeText(message.content)}
-                        >
-                          Copy
-                        </button>
-                        <button
-                          className="ghost"
-                          onClick={() => setScheduleDraft({ messageId: message.id })}
-                        >
-                          Schedule
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <div className="composer">
-                <textarea
-                  ref={composerRef}
-                  rows={3}
-                  value={composerValue}
-                  onChange={(event) => setComposerValue(event.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Send a message or type /agent to toggle Agent Mode"
-                  aria-label="Message composer"
-                />
-              <div className="composer__actions">
-                <button className="ghost" aria-label="Attach file">
-                  +
-                </button>
-                <button
-                  className="ghost"
-                  onClick={() => setAgentMode((prev) => !prev)}
-                  aria-label="Toggle Agent Mode"
-                >
-                  /agent
-                </button>
-                <select aria-label="Tool selector" className="tool-select">
-                  <option>Tools</option>
-                  <option>Browser</option>
-                  <option>Files</option>
-                  <option>Shell</option>
-                </select>
-                <button className="primary" onClick={handleSend}>
-                  Send
-                </button>
-              </div>
-            </div>
-            </div>
+            <section className="chat-panel">
+              <MessageList
+                messages={selectedChat?.messages || []}
+                onCopy={(content) => navigator.clipboard.writeText(content)}
+                onRetry={handleRetry}
+                onSchedule={(messageId) => setScheduleDraft({ messageId })}
+                isGenerating={isGenerating}
+              />
+              <Composer
+                value={composerValue}
+                onChange={handleComposerChange}
+                onSend={() => handleSend()}
+                onKeyDown={handleKeyDown}
+                onToggleAgent={() => setAgentMode((prev) => !prev)}
+                agentMode={agentMode}
+                isGenerating={isGenerating}
+                onStopGenerating={handleStopGenerating}
+                commandMenu={commandMenu}
+                onCommandSelect={handleCommandSelect}
+              />
+            </section>
           )}
 
           {activeView === "settings" && (
-            <div className="settings-panel">
+            <section className="settings-panel">
               <div className="settings-tabs">
                 <button
                   className={`tab ${settingsPanel === "general" ? "active" : ""}`}
@@ -678,7 +1032,7 @@ export default function App() {
               </div>
               {settingsPanel === "general" && (
                 <div className="settings-card">
-                  <h2>Sandbox VM Profile</h2>
+                  <h2>Sandbox integration (planned)</h2>
                   <p>{vmProfile.description}</p>
                   <ul>
                     {vmProfile.guardrails.map((rule) => (
@@ -716,11 +1070,11 @@ export default function App() {
                   {testMessage && <p className="status-text">{testMessage}</p>}
                 </div>
               )}
-            </div>
+            </section>
           )}
 
           {activeView === "schedules" && (
-            <div className="settings-panel">
+            <section className="settings-panel">
               <h2>Schedules</h2>
               <div className="schedule-list">
                 {state.schedules.map((schedule) => (
@@ -736,81 +1090,40 @@ export default function App() {
                 ))}
                 {!state.schedules.length && <p>No scheduled runs yet.</p>}
               </div>
-            </div>
+            </section>
           )}
 
-          <aside className={`run-panel ${activeView === "run" ? "active" : ""}`}>
-            <div className="run-panel__header">
-              <h2>Agent Run</h2>
-              <span className={`pill ${runStatus}`}>{runStatus}</span>
-            </div>
-            <div className="run-panel__controls">
-              <button className="ghost" onClick={() => runnerRef.current.pause()}>
-                Pause
-              </button>
-              <button className="ghost" onClick={() => setTakeOverMode(true)}>
-                Take Over
-              </button>
-              <button className="ghost danger" onClick={() => runnerRef.current.stop()}>
-                Stop
-              </button>
-              <button className="ghost" onClick={() => runnerRef.current.resume()}>
-                Resume
-              </button>
-            </div>
-
-            <div className="run-panel__section">
-              <h3>Activity</h3>
-              <ul>
-                {runEvents.slice(0, 6).map((event) => (
-                  <li key={`${event.type}-${event.timestamp}`}>
-                    {event.type.replace(/_/g, " ")}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {pendingConfirmation && (
-              <div className="confirmation">
-                <h3>Confirmation required</h3>
-                <p>{pendingConfirmation.step.action}</p>
-                <span>{pendingConfirmation.why}</span>
-                <div className="inline">
-                  <button className="primary" onClick={() => handleConfirmStep("confirm")}>
-                    Confirm
-                  </button>
-                  <button className="ghost" onClick={() => handleConfirmStep("deny")}>
-                    Deny
-                  </button>
-                  <button className="ghost">Edit</button>
-                </div>
-              </div>
-            )}
-
-            <div className="run-panel__section">
-              <h3>Tool Outputs</h3>
-              <div className="tool-tabs">
-                {toolSections.map((tool) => (
-                  <button
-                    key={tool}
-                    className={`tab ${activeToolTab === tool ? "active" : ""}`}
-                    onClick={() => setActiveToolTab(tool)}
-                  >
-                    {tool}
-                  </button>
-                ))}
-              </div>
-              <div className="tool-output">
-                <p>{activeToolTab} output will appear here.</p>
-              </div>
-            </div>
-            <div className="run-panel__section">
-              <h3>Local Models</h3>
-              <p className="muted">{currentModel ? `Using ${currentModel}` : "No model selected."}</p>
-            </div>
-          </aside>
+          <div className={`run-panel-wrapper ${activeView === "run" ? "active" : ""}`}>
+            <AgentPanel
+              runStatus={runStatus}
+              runEvents={runEvents}
+              pendingConfirmation={
+                pendingConfirmation && {
+                  ...pendingConfirmation,
+                  onToggleEdit: () =>
+                    setPendingConfirmation((prev) => ({
+                      ...prev,
+                      isEditing: !prev.isEditing
+                    }))
+                }
+              }
+              onConfirm={handleConfirmStep}
+              onDeny={handleDenyStep}
+              onEditPayload={(value) =>
+                setPendingConfirmation((prev) => ({
+                  ...prev,
+                  payloadText: value
+                }))
+              }
+              onPause={() => runnerRef.current.pause()}
+              onResume={() => runnerRef.current.resume()}
+              onStop={() => runnerRef.current.stop()}
+              onTakeover={handleTakeoverStart}
+              takeoverRequested={takeoverRequested}
+            />
+          </div>
         </div>
-      </section>
+      </main>
 
       {scheduleDraft && (
         <div className="modal" role="dialog" aria-modal="true">
@@ -837,9 +1150,9 @@ export default function App() {
       {takeOverMode && (
         <div className="takeover" role="dialog" aria-modal="true">
           <div className="takeover__card">
-            <h3>Take Over Mode</h3>
-            <p>You now control the sandboxed VM. Agent input is paused.</p>
-            <button className="primary" onClick={() => setTakeOverMode(false)}>
+            <h3>You are in control</h3>
+            <p>Browser preview is mocked. Return control to resume the agent.</p>
+            <button className="primary" onClick={handleTakeoverEnd}>
               Return control to agent
             </button>
           </div>

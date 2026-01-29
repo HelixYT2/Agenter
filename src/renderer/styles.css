@@ -9,9 +9,14 @@
   box-sizing: border-box;
 }
 
+html,
+body,
+#root {
+  height: 100%;
+}
+
 body {
   margin: 0;
-  min-height: 100vh;
 }
 
 button,
@@ -22,12 +27,21 @@ textarea {
   color: inherit;
 }
 
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid rgba(108, 240, 255, 0.7);
+  outline-offset: 2px;
+}
+
 .app {
-  min-height: 100vh;
+  min-height: 100%;
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
-  gap: 24px;
-  padding: 24px 28px;
+  gap: 20px;
+  padding: 20px 24px;
+  overflow-x: hidden;
 }
 
 .app--collapsed {
@@ -38,11 +52,20 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: 20px;
+  padding: 18px;
   border-radius: 22px;
   background: rgba(10, 15, 31, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(16px);
+  min-height: 0;
+}
+
+.sidebar--collapsed .sidebar__brand,
+.sidebar--collapsed .sidebar__search,
+.sidebar--collapsed .sidebar__label,
+.sidebar--collapsed .list-title,
+.sidebar--collapsed .list-time {
+  display: none;
 }
 
 .sidebar__header {
@@ -75,6 +98,7 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-height: 0;
 }
 
 .sidebar__label {
@@ -90,6 +114,21 @@ textarea {
   align-items: center;
 }
 
+.sidebar__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.sidebar__footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .list-button {
   width: 100%;
   text-align: left;
@@ -98,11 +137,23 @@ textarea {
   border: 1px solid transparent;
   background: transparent;
   cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .list-button.active {
   border-color: rgba(108, 240, 255, 0.5);
   background: rgba(108, 240, 255, 0.08);
+}
+
+.list-title {
+  font-size: 13px;
+}
+
+.list-time {
+  font-size: 11px;
+  color: rgba(233, 238, 248, 0.5);
 }
 
 button {
@@ -133,52 +184,51 @@ button.danger {
   color: #ff8a8a;
 }
 
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .main {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 14px;
+  min-height: 0;
 }
 
-.topbar {
+.chat-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 18px 22px;
+  padding: 16px 20px;
   border-radius: 20px;
   background: rgba(12, 18, 38, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(14px);
 }
 
-.topbar h1 {
+.chat-header h1 {
   margin: 0;
   font-size: 20px;
 }
 
-.topbar p {
+.chat-header p {
   margin: 6px 0 0;
   color: rgba(233, 238, 248, 0.6);
   font-size: 13px;
 }
 
-.topbar__actions {
+.chat-header__actions {
   display: flex;
   gap: 10px;
   align-items: center;
 }
 
-.topbar select {
+.chat-header select {
   padding: 8px 12px;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.15);
   background: rgba(9, 13, 25, 0.9);
-}
-
-.toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
 }
 
 .status-pill {
@@ -196,20 +246,22 @@ button.danger {
 
 .content {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
   gap: 20px;
+  min-height: 0;
 }
 
 .chat-panel {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   border-radius: 20px;
-  padding: 20px;
+  padding: 16px 18px;
   background: rgba(12, 18, 38, 0.75);
   border: 1px solid rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(16px);
-  min-height: 70vh;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .timeline {
@@ -218,6 +270,9 @@ button.danger {
   flex-direction: column;
   gap: 14px;
   overflow-y: auto;
+  min-height: 0;
+  padding-right: 6px;
+  padding-bottom: 80px;
 }
 
 .message {
@@ -225,6 +280,7 @@ button.danger {
   border-radius: 16px;
   line-height: 1.5;
   max-width: 92%;
+  position: relative;
 }
 
 .message--assistant {
@@ -244,26 +300,55 @@ button.danger {
   font-size: 13px;
 }
 
-.tool-card summary {
-  cursor: pointer;
-  font-weight: 600;
-  margin-bottom: 8px;
+.message__content {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
-.tool-card[open] summary {
-  margin-bottom: 8px;
+.message__content pre {
+  background: rgba(8, 12, 24, 0.7);
+  padding: 12px;
+  border-radius: 12px;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.message__content code {
+  font-family: "JetBrains Mono", monospace;
 }
 
 .message__actions {
   display: flex;
   gap: 8px;
   margin-top: 10px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.message:hover .message__actions {
+  opacity: 1;
+}
+
+.tool-card summary {
+  cursor: pointer;
+  font-weight: 600;
+  margin-bottom: 8px;
 }
 
 .composer {
+  position: sticky;
+  bottom: 0;
+  background: rgba(12, 18, 38, 0.9);
+  border-radius: 16px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.composer__input {
+  position: relative;
 }
 
 .composer textarea {
@@ -275,6 +360,17 @@ button.danger {
   background: rgba(9, 13, 25, 0.9);
 }
 
+.mode-pill {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(108, 240, 255, 0.2);
+  border: 1px solid rgba(108, 240, 255, 0.4);
+  font-size: 11px;
+}
+
 .composer__actions {
   display: flex;
   gap: 10px;
@@ -282,22 +378,45 @@ button.danger {
   justify-content: flex-end;
 }
 
-.tool-select {
-  padding: 8px 12px;
+.command-menu {
+  position: absolute;
+  bottom: 110px;
+  left: 24px;
+  background: rgba(8, 12, 24, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(9, 13, 25, 0.9);
+  padding: 6px;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.command-item {
+  padding: 8px 12px;
+  border-radius: 8px;
+  text-align: left;
+  background: transparent;
+}
+
+.command-item.active {
+  background: rgba(108, 240, 255, 0.2);
+}
+
+.run-panel-wrapper {
+  min-height: 0;
 }
 
 .run-panel {
   border-radius: 20px;
-  padding: 20px;
+  padding: 18px;
   background: rgba(12, 18, 38, 0.75);
   border: 1px solid rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(16px);
   display: flex;
   flex-direction: column;
   gap: 14px;
+  min-height: 0;
 }
 
 .run-panel__header {
@@ -310,6 +429,14 @@ button.danger {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.run-panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .run-panel__section ul {
@@ -335,32 +462,39 @@ button.danger {
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(9, 13, 25, 0.6);
-}
-
-.tool-tabs {
   display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.tab {
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.05);
-  cursor: pointer;
+.payload pre {
+  background: rgba(8, 12, 24, 0.7);
+  padding: 10px;
+  border-radius: 10px;
+  overflow-x: auto;
 }
 
-.tab.active {
-  border-color: rgba(108, 240, 255, 0.6);
-  background: rgba(108, 240, 255, 0.2);
+.payload-editor {
+  width: 100%;
+  min-height: 120px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(9, 13, 25, 0.9);
 }
 
 .tool-output {
-  padding: 12px;
+  padding: 10px 12px;
   border-radius: 14px;
   border: 1px dashed rgba(255, 255, 255, 0.2);
-  font-size: 13px;
+  background: rgba(8, 12, 24, 0.5);
+}
+
+.callout {
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(108, 240, 255, 0.2);
+  background: rgba(108, 240, 255, 0.08);
 }
 
 .settings-panel {
@@ -437,11 +571,7 @@ button.danger {
   display: flex;
   flex-direction: column;
   gap: 12px;
-}
-
-.takeover__card {
   max-width: 360px;
-  text-align: center;
 }
 
 .mobile-tabs {
@@ -468,12 +598,12 @@ button.danger {
     grid-template-columns: 1fr;
   }
 
-  .run-panel {
+  .run-panel-wrapper {
     display: none;
   }
 
-  .run-panel.active {
-    display: flex;
+  .run-panel-wrapper.active {
+    display: block;
   }
 
   .mobile-tabs {

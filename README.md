@@ -1,13 +1,13 @@
 # Helix Agent (Local AI Workspace)
 
-Helix Agent is a local-first desktop app that blends a standard chat experience with an embedded Agent Mode. Chat normally with your local model, or toggle Agent Mode inside the same conversation to plan and execute multi-step tasks inside a sandboxed VM.
+Helix Agent is a local-first desktop app that blends a standard chat experience with an embedded Agent Mode. Chat normally with your local model, or toggle Agent Mode inside the same conversation to plan and execute multi-step tasks. **Sandbox/VM integration is mocked until the VM control layer is implemented.**
 
 ## What is included
 - Chat-first UI with sidebar, projects, schedules, settings, and conversation list.
-- Agent Mode run panel with live status, activity feed, confirmations, and tool output placeholders.
+- Agent Mode run panel with live status, activity feed, confirmations, takeover, and tool output placeholders.
 - LM Studio connection testing, model discovery, and streaming chat requests.
 - Local schedules stored in JSON via local storage.
-- VM control schema and guardrails as JSON for future tool execution.
+- VM control schema + guardrails as JSON (planning only; actions are mocked).
 - Electron + Vite + React build setup for Windows `.exe` packaging.
 
 ## Getting started
@@ -25,15 +25,16 @@ This uses `electron-builder` with the `nsis` target to generate a Windows instal
 ## How to use
 1. **Connect LM Studio:** Open Settings → Local Models, set the base URL (default `http://127.0.0.1:1234`), and click **Test Connection**.
 2. **Start a normal chat:** Select a model in the header and send a message; responses stream into the chat.
-3. **Toggle Agent Mode:** Click `/agent` or enable the Agent Mode toggle, then send a task request.
+3. **Toggle Agent Mode:** Switch the mode selector to Agent or use `/agent`, then send a task request.
 4. **Confirm or deny steps:** When a step requires confirmation, use the Confirm/Deny buttons in the run panel.
-5. **Schedule a run:** Use **Schedule** on any assistant message and pick a cadence; manage schedules in the sidebar.
+5. **Take over (mock):** If takeover is requested, the agent pauses until you return control.
+6. **Schedule a run:** Use **Schedule** on any assistant message and pick a cadence; manage schedules in the sidebar.
 
 ## Acceptance checks
 - Connection test works against LM Studio base URL.
 - Model list loads via `/v1/models`.
-- Chat sends and streams responses via `/v1/chat/completions`.
-- Agent Mode creates a plan and emits run events, pausing on confirmations.
+- Chat sends and streams responses via `/v1/chat/completions` (fallback works if no streaming).
+- Agent Mode creates a plan and emits run events, pausing on confirmations and takeover.
 - `npm run electron:build` produces a Windows installer `.exe` that launches without a blank window.
 
 ## Next steps

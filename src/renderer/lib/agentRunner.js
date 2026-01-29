@@ -6,30 +6,34 @@ const defaultPlan = (goal) => ({
   plan: [
     "Summarize the user goal",
     "Collect required information",
-    "Execute actions in the sandbox",
+    "Execute actions in the sandbox (mock)",
     "Deliver results"
   ],
   steps: [
     {
       id: "step-1",
       title: "Open the target website",
-      action: "Open the relevant website in the sandboxed browser.",
+      action: "Open the relevant website in the mock browser preview.",
       impact: "read-only",
-      tool: "browser"
+      tool: "browser",
+      payload: { url: "https://example.com" }
     },
     {
       id: "step-2",
       title: "Gather the needed info",
       action: "Scan the page and extract key data points.",
       impact: "read-only",
-      tool: "browser"
+      tool: "browser",
+      payload: { selector: "#content" }
     },
     {
       id: "step-3",
       title: "Draft the final output",
       action: "Compile a response and prepare any edits or uploads.",
       impact: "write",
-      tool: "files"
+      tool: "files",
+      requiresTakeover: true,
+      payload: { path: "/workspace/output.txt" }
     }
   ],
   rules: vmProfile.guardrails,
@@ -51,7 +55,7 @@ const parsePlanResponse = (text, goal) => {
 };
 
 export const requestPlan = async ({ goal, model, baseUrl, apiKey, streamChat }) => {
-  const systemPrompt = `You are an agent planner for a sandboxed VM.\nReturn JSON only with keys: plan (string[]), steps (array of {id,title,action,impact,tool,why}), rules (string[]).\nImpact must be one of: read-only, write, destructive, external.\nTool must be one of: browser, shell, files.\nThe VM control schema is: ${JSON.stringify(vmProfile.controlSchema)}.\nRules: ${vmProfile.guardrails.join(" ")}.\nGoal: ${goal}`;
+  const systemPrompt = `You are an agent planner for a sandboxed VM (mock).\nReturn JSON only with keys: plan (string[]), steps (array of {id,title,action,impact,tool,why,requiresTakeover,payload}), rules (string[]).\nImpact must be one of: read-only, write, destructive, external.\nTool must be one of: browser, shell, files.\nThe VM control schema is: ${JSON.stringify(vmProfile.controlSchema)}.\nRules: ${vmProfile.guardrails.join(" ")}.\nGoal: ${goal}`;
 
   let output = "";
   await streamChat({
@@ -64,11 +68,8 @@ export const requestPlan = async ({ goal, model, baseUrl, apiKey, streamChat }) 
         { role: "user", content: goal }
       ]
     },
-    onToken: (token, done) => {
+    onToken: (token) => {
       output += token;
-      if (done && !output.trim()) {
-        output = "";
-      }
     }
   });
 
@@ -83,13 +84,14 @@ export const createAgentRunner = ({ bus }) => {
   let status = "idle";
   let aborted = false;
   let paused = false;
+  let takeoverActive = false;
 
   const emit = (type, payload = {}) => {
     bus.emit({ type, timestamp: Date.now(), ...payload });
   };
 
   const waitWhilePaused = async () => {
-    while (paused && !aborted) {
+    while ((paused || takeoverActive) && !aborted) {
       await delay(200);
     }
   };
@@ -100,10 +102,29 @@ export const createAgentRunner = ({ bus }) => {
     emit("run_stopped", { status });
   };
 
+  const requestTakeover = (step) => {
+    status = "awaiting_takeover";
+    takeoverActive = true;
+    emit("takeover_requested", { step, status });
+  };
+
+  const startTakeover = () => {
+    status = "paused";
+    takeoverActive = true;
+    emit("takeover_started", { status });
+  };
+
+  const endTakeover = () => {
+    status = "running";
+    takeoverActive = false;
+    emit("takeover_ended", { status });
+  };
+
   const run = async (plan) => {
     aborted = false;
     status = "running";
     paused = false;
+    takeoverActive = false;
     emit("run_started", { plan, status });
     emit("plan_created", { plan: plan.plan || [] });
 
@@ -115,7 +136,7 @@ export const createAgentRunner = ({ bus }) => {
       emit("step_started", { step, status });
 
       if (step.impact && step.impact !== "read-only") {
-        status = "waiting_confirmation";
+        status = "awaiting_confirmation";
         emit("step_requires_confirmation", { step, status });
         const decision = await new Promise((resolve) => {
           const unsubscribe = bus.subscribe((event) => {
@@ -125,19 +146,34 @@ export const createAgentRunner = ({ bus }) => {
             if (event.type === "step_confirmed") {
               status = "running";
               unsubscribe();
-              resolve("confirmed");
+              resolve({ action: "confirmed", payload: event.payload || step.payload });
             }
             if (event.type === "step_denied") {
               status = "running";
               unsubscribe();
-              resolve("denied");
+              resolve({ action: "denied" });
             }
           });
         });
-        if (decision === "denied") {
+        if (decision.action === "denied") {
           emit("step_skipped", { step, status });
           continue;
         }
+        if (decision.payload) {
+          step.payload = decision.payload;
+        }
+      }
+
+      if (step.requiresTakeover) {
+        requestTakeover(step);
+        await new Promise((resolve) => {
+          const unsubscribe = bus.subscribe((event) => {
+            if (event.type === "takeover_ended") {
+              unsubscribe();
+              resolve();
+            }
+          });
+        });
       }
 
       if (aborted) {
@@ -175,6 +211,8 @@ export const createAgentRunner = ({ bus }) => {
     stop,
     pause,
     resume,
+    startTakeover,
+    endTakeover,
     getStatus: () => status,
     emit
   };

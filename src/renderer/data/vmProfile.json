@@ -1,6 +1,6 @@
 {
-  "name": "Helix Sandbox VM",
-  "description": "Isolated VM used by the agent. Provides a remote desktop, shell, and file access in a controlled sandbox.",
+  "name": "Helix Sandbox (planned)",
+  "description": "Sandbox integration is coming soon. The preview and actions are mocked until VM wiring is implemented.",
   "capabilities": [
     "browser",
     "shell",
@@ -56,6 +56,7 @@
     "Read-only actions are executed automatically.",
     "Write, destructive, or external actions require explicit user confirmation.",
     "Sensitive inputs must be entered during Take Over mode.",
+    "Sandbox preview is mocked until VM integration is implemented.",
     "Never access host files outside the sandbox without explicit permission."
   ]
 }

@@ -42,11 +42,12 @@ const parseSse = (buffer) => {
   return { events, buffer: remaining };
 };
 
-export const streamChatCompletion = async ({ baseUrl, apiKey, payload, onToken }) => {
+export const streamChatCompletion = async ({ baseUrl, apiKey, payload, onToken, signal }) => {
   const response = await fetch(`${normalizeBaseUrl(baseUrl)}/v1/chat/completions`, {
     method: "POST",
     headers: getHeaders(apiKey),
-    body: JSON.stringify({ ...payload, stream: true })
+    body: JSON.stringify({ ...payload, stream: true }),
+    signal
   });
 
   if (!response.ok) {
