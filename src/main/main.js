@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, shell } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -9,7 +9,7 @@ const createWindow = () => {
   const mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
-    backgroundColor: "#0a0f1f",
+    backgroundColor: "#040404",
     titleBarStyle: "hiddenInset",
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
@@ -23,6 +23,26 @@ const createWindow = () => {
   } else {
     mainWindow.loadFile(path.join(__dirname, "../../dist/index.html"));
   }
+
+  const isAllowedNavigation = (url) =>
+    url.startsWith("file://") ||
+    (process.env.VITE_DEV_SERVER_URL &&
+      url.startsWith(process.env.VITE_DEV_SERVER_URL));
+
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (!isAllowedNavigation(url)) {
+      shell.openExternal(url);
+      return { action: "deny" };
+    }
+    return { action: "allow" };
+  });
+
+  mainWindow.webContents.on("will-navigate", (event, url) => {
+    if (!isAllowedNavigation(url)) {
+      event.preventDefault();
+      shell.openExternal(url);
+    }
+  });
 };
 
 app.whenReady().then(() => {
