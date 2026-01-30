@@ -1,8 +1,8 @@
 :root {
   color-scheme: dark;
   font-family: "Inter", system-ui, sans-serif;
-  background: radial-gradient(circle at top, #1a2a4d 0%, #0a0f1f 55%, #05070f 100%);
-  color: #e9eef8;
+  background: #040404;
+  color: #f5f5f5;
 }
 
 * {
@@ -20,6 +20,8 @@ body {
   flex-direction: column;
   gap: 24px;
   padding: 24px 36px 48px;
+  background: radial-gradient(circle at 20% 10%, rgba(255, 255, 255, 0.08), transparent 45%),
+    radial-gradient(circle at 80% 30%, rgba(255, 255, 255, 0.05), transparent 55%);
 }
 
 .topbar {
@@ -28,9 +30,8 @@ body {
   align-items: center;
   padding: 16px 22px;
   border-radius: 20px;
-  background: linear-gradient(120deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04));
-  backdrop-filter: blur(18px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(5, 5, 5, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.16);
 }
 
 .brand {
@@ -39,12 +40,9 @@ body {
   gap: 16px;
 }
 
-.brand__orb {
+.brand__logo {
   width: 42px;
   height: 42px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #6cf0ff 0%, #8b7bff 100%);
-  box-shadow: 0 0 24px rgba(108, 240, 255, 0.4);
 }
 
 .brand__title {
@@ -56,7 +54,7 @@ body {
 .brand__subtitle {
   margin: 4px 0 0;
   font-size: 13px;
-  color: rgba(233, 238, 248, 0.7);
+  color: rgba(245, 245, 245, 0.7);
 }
 
 .topbar__actions {
@@ -76,19 +74,24 @@ button {
 }
 
 button.primary {
-  background: linear-gradient(135deg, rgba(108, 240, 255, 0.8), rgba(139, 123, 255, 0.9));
-  color: #05070f;
+  background: #ffffff;
+  color: #0a0a0a;
   font-weight: 600;
 }
 
 button.ghost {
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(10, 15, 31, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(15, 15, 15, 0.6);
 }
 
 button.danger {
-  border-color: rgba(255, 95, 95, 0.4);
+  border-color: rgba(255, 95, 95, 0.5);
   color: #ff8a8a;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .grid {
@@ -100,10 +103,9 @@ button.danger {
 .card {
   border-radius: 24px;
   padding: 20px 24px;
-  background: rgba(12, 18, 38, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 20px 60px rgba(3, 8, 18, 0.4);
-  backdrop-filter: blur(16px);
+  background: rgba(8, 8, 8, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -128,13 +130,82 @@ button.danger {
   padding: 6px 12px;
   border-radius: 999px;
   font-size: 12px;
-  border: 1px solid rgba(108, 240, 255, 0.4);
-  background: rgba(108, 240, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .pill.ghost {
   border-color: rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.hero {
+  grid-column: span 2;
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 24px;
+}
+
+.hero__content h1 {
+  margin: 0 0 12px;
+  font-size: 32px;
+  letter-spacing: 0.02em;
+}
+
+.hero__content p {
+  margin: 0 0 20px;
+  color: rgba(245, 245, 245, 0.72);
+  line-height: 1.6;
+}
+
+.hero__actions {
+  display: flex;
+  gap: 12px;
+}
+
+.hero__logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.hero__logo img {
+  width: 120px;
+  height: 120px;
+}
+
+.hero__logo span {
+  font-size: 12px;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.access__status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(0, 0, 0, 0.55);
+  font-size: 13px;
+}
+
+.access__status span {
+  color: rgba(245, 245, 245, 0.7);
+}
+
+.access__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .workspace {
@@ -163,12 +234,12 @@ button.danger {
 .viewer__preview {
   height: 300px;
   border-radius: 18px;
-  border: 1px dashed rgba(108, 240, 255, 0.3);
+  border: 1px dashed rgba(255, 255, 255, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(233, 238, 248, 0.6);
-  background: rgba(9, 13, 25, 0.7);
+  color: rgba(245, 245, 245, 0.6);
+  background: rgba(0, 0, 0, 0.6);
 }
 
 .workspace__status ul {
@@ -185,8 +256,8 @@ button.danger {
   margin-top: 12px;
   padding: 14px;
   border-radius: 16px;
-  background: rgba(108, 240, 255, 0.08);
-  border: 1px solid rgba(108, 240, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .callout h4 {
@@ -209,14 +280,14 @@ button.danger {
 }
 
 .chat__bubble.agent {
-  background: rgba(108, 240, 255, 0.12);
-  border: 1px solid rgba(108, 240, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
 }
 
 .chat__bubble.user {
   align-self: flex-end;
-  background: rgba(139, 123, 255, 0.2);
-  border: 1px solid rgba(139, 123, 255, 0.3);
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .composer {
@@ -229,8 +300,8 @@ button.danger {
   padding: 12px 14px;
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(9, 13, 25, 0.9);
-  color: #e9eef8;
+  background: rgba(0, 0, 0, 0.8);
+  color: #f5f5f5;
 }
 
 .stack {
@@ -244,15 +315,15 @@ button.danger {
   flex-direction: column;
   gap: 8px;
   font-size: 13px;
-  color: rgba(233, 238, 248, 0.75);
+  color: rgba(245, 245, 245, 0.65);
 }
 
 .stack input {
   padding: 10px 12px;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(10, 15, 31, 0.8);
-  color: #e9eef8;
+  background: rgba(0, 0, 0, 0.75);
+  color: #f5f5f5;
 }
 
 .inline {
@@ -261,7 +332,7 @@ button.danger {
 }
 
 .muted {
-  color: rgba(233, 238, 248, 0.6);
+  color: rgba(245, 245, 245, 0.6);
   margin: 0;
 }
 
@@ -272,7 +343,7 @@ button.danger {
   padding: 12px 14px;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(8, 12, 24, 0.6);
+  background: rgba(0, 0, 0, 0.5);
 }
 
 .status div {
@@ -289,14 +360,14 @@ button.danger {
   padding: 12px 14px;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(8, 12, 24, 0.5);
+  background: rgba(0, 0, 0, 0.45);
 }
 
 .schedule span {
   display: block;
   margin-top: 6px;
   font-size: 12px;
-  color: rgba(233, 238, 248, 0.6);
+  color: rgba(245, 245, 245, 0.6);
 }
 
 @media (max-width: 1100px) {
@@ -306,6 +377,11 @@ button.danger {
 
   .card.tall {
     grid-column: span 1;
+  }
+
+  .hero {
+    grid-column: span 1;
+    grid-template-columns: 1fr;
   }
 
   .workspace {

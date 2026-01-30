@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
+import helixLogo from "./assets/helix-logo.svg";
 
 const activityItems = [
-  "Booting sandboxed VM profile...",
-  "Connecting to local models from LM Studio...",
-  "Launching secure browser session...",
-  "Ready to accept tasks."
+  "Booting secure runtime core...",
+  "Syncing local operators and policies...",
+  "Establishing encrypted workspace...",
+  "Standing by for mission input."
 ];
 
 const schedules = [
@@ -14,27 +15,91 @@ const schedules = [
 ];
 
 export default function App() {
+  const [loginStarted, setLoginStarted] = useState(false);
+  const [accessGranted, setAccessGranted] = useState(false);
+  const loginUrl = "https://www.helixcorporation.org/login";
+
+  const handleLogin = () => {
+    window.open(loginUrl, "_blank", "noopener,noreferrer");
+    setLoginStarted(true);
+    setAccessGranted(false);
+  };
+
   return (
     <div className="app">
       <header className="topbar">
         <div className="brand">
-          <span className="brand__orb" />
+          <img className="brand__logo" src={helixLogo} alt="Helix logo" />
           <div>
             <p className="brand__title">Helix Agent</p>
-            <p className="brand__subtitle">Local-first autonomous workspace</p>
+            <p className="brand__subtitle">Monochrome secure operations console</p>
           </div>
         </div>
         <div className="topbar__actions">
-          <button className="ghost">Docs</button>
-          <button className="primary">Start Agent Mode</button>
+          <button className="ghost">System Status</button>
+          <button className="primary">Launch Workspace</button>
         </div>
       </header>
 
       <main className="grid">
+        <section className="card hero">
+          <div className="hero__content">
+            <h1>Orbit-ready autonomous operations.</h1>
+            <p>
+              A focused, monochrome interface inspired by the Helix mark. Keep your
+              mission data contained, minimal, and fast to reach.
+            </p>
+            <div className="hero__actions">
+              <button className="ghost">View Protocols</button>
+              <button className="primary">Start Session</button>
+            </div>
+          </div>
+          <div className="hero__logo">
+            <img src={helixLogo} alt="Helix emblem" />
+            <span>Helix Secure</span>
+          </div>
+        </section>
+
+        <section className="card access">
+          <div className="card__header">
+            <h2>Access Gateway</h2>
+            <div className="pill">Login</div>
+          </div>
+          <p className="muted">
+            Authenticate via the Helix portal to unlock operational tools. Login opens
+            in your default browser and returns you here to continue.
+          </p>
+          <div className="access__status">
+            <strong>Status</strong>
+            <span>
+              {accessGranted
+                ? "Access verified · Welcome back."
+                : loginStarted
+                ? "Awaiting login confirmation."
+                : "Not authenticated."}
+            </span>
+          </div>
+          <div className="access__actions">
+            <button className="primary" onClick={handleLogin}>
+              Login
+            </button>
+            <button
+              className="ghost"
+              onClick={() => setAccessGranted(true)}
+              disabled={!loginStarted}
+            >
+              I&apos;ve logged in
+            </button>
+            <button className="ghost" disabled={!accessGranted}>
+              Continue to Console
+            </button>
+          </div>
+        </section>
+
         <section className="card tall">
           <div className="card__header">
             <h2>Agent Workspace</h2>
-            <div className="pill">Live</div>
+            <div className="pill ghost">Live</div>
           </div>
           <div className="workspace">
             <div className="workspace__viewer">
@@ -94,7 +159,7 @@ export default function App() {
         <section className="card">
           <div className="card__header">
             <h2>Local Models</h2>
-            <div className="pill">LM Studio</div>
+            <div className="pill ghost">LM Studio</div>
           </div>
           <div className="stack">
             <label>
