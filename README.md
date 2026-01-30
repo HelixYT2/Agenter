@@ -1,31 +1,28 @@
-# Helix Agent (Local AI Workspace)
+# Artemis (Local AI Workspace)
 
-This repository is a starter scaffold for a local Agent AI desktop application. It focuses on the user interface and packaging flow so you can build a Windows `.exe` via Electron.
+Artemis is a web-first Local AI Workspace inspired by ChatGPT’s chat UI + Agent Mode UI. It runs in the browser and connects to a local model through a secure Local Connector, while orchestrating a Windows VM workspace for agent execution.
+
+## Portal integration
+Artemis is paired with a portal site (marketing + account). The portal links to Artemis via **Open Artemis**, and Artemis keeps a persistent **Back to Portal** link in its header and sidebar. A short-lived session handoff (`?session=`) can be exchanged for an Artemis JWT, and the URL is cleaned immediately after exchange.
 
 ## What is included
-- Glassy “mission control” UI inspired by agent mode.
+- Glassy “mission control” web UI with a chat plane + agent workspace plane.
 - UI sections for:
-  - Agent workspace with remote browser preview, activity feed, and controls.
-  - Chat/composer with `/agent` affordance.
-  - Local model configuration (LM Studio base URL + key).
-  - Sandboxed VM status and guardrails.
-  - Automation scheduling cards.
-- Electron shell with Vite + React renderer.
+  - Local Connector pairing + model list loading.
+  - Agent run plans, approvals, live timeline, and artifacts.
+  - Embedded VM panel with controls for files, logs, and downloads.
+  - Scheduling UX and audit-ready log views.
+- JWT auth integration with `/api/v1/auth/login` and `/api/v1/auth/verify`.
+
+## Default connection mode
+**Local Connector (default)**: Artemis calls a localhost connector that proxies LM Studio (`/v1/models`, `/v1/chat/completions`), adds CORS headers, and requires pairing. Localhost-first and remote inference remain optional modes.
 
 ## Getting started
 ```bash
 npm install
-npm run electron:dev
+npm run dev
 ```
 
-## Build a Windows `.exe`
-```bash
-npm run electron:build
-```
-This uses `electron-builder` with the `nsis` target to generate a Windows installer `.exe`.
-
-## Next steps
-- Implement VM orchestration (e.g., Hyper-V/WSL2 virtualization hooks).
-- Connect to LM Studio or other local inference servers.
-- Add agent runtime, tool execution, and permissions gating.
-- Replace placeholder activity feed with real events.
+## Documentation
+- `docs/web-implementation-plan.md` — implementation blueprint, file structure, UI components, API contracts.
+- `docs/ui-map.md` — UI map and interaction flows.
