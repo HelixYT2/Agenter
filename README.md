@@ -1,31 +1,25 @@
 # Helix Agent (Local AI Workspace)
 
-This repository is a starter scaffold for a local Agent AI desktop application. It focuses on the user interface and packaging flow so you can build a Windows `.exe` via Electron.
+This repository is a web-first scaffold for a Local AI Workspace inspired by ChatGPT’s chat UI + Agent Mode UI. It runs entirely in the browser and connects to a local OpenAI-compatible model server (LM Studio) while orchestrating a Windows VM workspace for agent execution.
 
 ## What is included
-- Glassy “mission control” UI inspired by agent mode.
+- Glassy “mission control” web UI with a chat plane + agent workspace plane.
 - UI sections for:
-  - Agent workspace with remote browser preview, activity feed, and controls.
-  - Chat/composer with `/agent` affordance.
-  - Local model configuration (LM Studio base URL + key).
-  - Sandboxed VM status and guardrails.
-  - Automation scheduling cards.
-- Electron shell with Vite + React renderer.
+  - Local model connection management (LM Studio base URL + model list).
+  - Agent run plans, approvals, and live timeline.
+  - Embedded VM panel with controls for files, logs, and downloads.
+  - Scheduling UX and audit-ready log views.
+- JWT auth integration with `/api/v1/auth/login` and `/api/v1/auth/verify`.
+
+## Default connection mode
+**Mode B (Localhost-first)**: run the UI locally so it can safely call `http://127.0.0.1:1234/v1` without browser private-network restrictions. Mode A (remote inference) and Mode C (local relay) remain pluggable.
 
 ## Getting started
 ```bash
 npm install
-npm run electron:dev
+npm run dev
 ```
 
-## Build a Windows `.exe`
-```bash
-npm run electron:build
-```
-This uses `electron-builder` with the `nsis` target to generate a Windows installer `.exe`.
-
-## Next steps
-- Implement VM orchestration (e.g., Hyper-V/WSL2 virtualization hooks).
-- Connect to LM Studio or other local inference servers.
-- Add agent runtime, tool execution, and permissions gating.
-- Replace placeholder activity feed with real events.
+## Documentation
+- `docs/web-implementation-plan.md` — full implementation plan, file structure, UI components, and API contracts.
+- `docs/ui-map.md` — UI map and interaction flows.

@@ -1,120 +1,78 @@
-# Artemis (Helix Agent) Chat-First UI Map
+# Helix Agent Web UI Map
 
-## UI Map (Routes, Screens, Panels)
-
-### Primary Route
+## Primary Route
 - **`/` Chat Workspace**
   - Persistent left sidebar (collapsible)
   - Main chat column (top bar, timeline, composer)
-  - Contextual right panel (Agent Mode or tool/canvas usage)
+  - Agent workspace right panel (Run, VM, Files, Logs, Schedules)
 
-### Overlays & Panels
+## Overlays & Panels
 - **Login Modal** (Identity chip)
-- **Settings Modal** (Providers + Tasks management)
+- **Settings Modal** (Connections, guardrails, system status)
 - **Composer Action Menu** (+ button)
-- **Right Panel Tabs** (Run Log, Confirmations, Tools, Canvas)
 
-### Settings Subviews (Modal sections)
-- Providers (model selection, API key, test connection)
-- Tasks (list, pause/delete, create new task)
-
-## Component List (Exact)
+## Component Inventory
 - `AppShell`
   - `Sidebar`
     - `NewChatButton`
     - `SidebarSearch`
-    - `ChatHistoryGroup`
-    - `ProjectsList`
-    - `SidebarFooter`
+    - `ConversationGroups`
+    - `WorkspaceSwitcher`
+    - `QuickLinks`
   - `TopBar`
-    - `ConversationTitleInput`
-    - `Breadcrumbs`
-    - `ModelSelectorChip`
+    - `WorkspaceTitle`
+    - `ModelSelector`
+    - `AgentModeToggle`
+    - `ConnectionStatusChips`
     - `IdentityChip`
-    - `AgentModeChip`
-    - `SystemStatusChip`
-    - `OverflowMenu`
   - `ChatTimeline`
-    - `MessageBubble`
+    - `MessageCard`
     - `MessageActions`
-    - `MessageDetails`
-    - `MessageSources`
+    - `AttachmentStrip`
+    - `StreamingIndicator`
     - `ScheduleCard`
   - `Composer`
     - `ActionMenu`
-    - `ModeIndicator`
     - `MessageInput`
     - `AttachmentButton`
     - `SendButton`
-  - `RightPanel`
-    - `RunLog`
-    - `Confirmations`
-    - `ToolWorkspaceTabs`
-    - `CanvasEditor`
+  - `AgentPanel`
+    - `RunTab` (Plan, Timeline, Approvals, Controls)
+    - `VMTab` (Remote desktop + toolbar)
+    - `FilesTab` (Tree + diff viewer)
+    - `LogsTab` (Filters + JSONL export)
+    - `SchedulesTab` (Cadence + enable/disable)
   - `SettingsModal`
-    - `ProvidersPanel`
-    - `TasksPanel`
+    - `ConnectionsPanel`
+    - `GuardrailsPanel`
+    - `SystemStatusPanel`
   - `LoginModal`
     - `LoginForm`
     - `SubscriptionPanel`
 
 ## Interaction Flows
+### Connect Local Model
+1. Open Settings → Connections.
+2. Enter base URL and optional API key.
+3. Click “Test connection” to call `/v1/models`.
+4. Select default model from the returned list.
 
-### Normal Chat Flow
-1. User selects or creates a chat from the sidebar.
-2. User types in composer and sends message.
-3. Assistant responds with optional Details/Sources.
-4. User can copy/regenerate/save to project.
+### Agent Mode Run
+1. Toggle Agent Mode or type `/agent`.
+2. Plan appears with 3–8 steps.
+3. Live timeline streams events (step started, tool calls, logs).
+4. Approval card blocks until Confirm/Deny.
+5. Run completes with Outcome summary + artifacts.
 
-### Enable Agent Mode via Composer “+”
-1. User opens composer action menu via “+”.
-2. Selects “Enable Agent mode”.
-3. Agent mode chip appears in top bar.
-4. Right panel opens with Run Log + Confirmations + Tools tabs.
+### VM Session
+1. Start run to boot a Windows VM session.
+2. VM tab streams the desktop (WebRTC/noVNC/RDP gateway).
+3. Toolbar enables clipboard, upload, download, and snapshot.
 
-### Agent Run, Pause, Confirm/Deny, Takeover, Resume
-1. Agent run log shows queued/running/completed steps.
-2. Confirmations panel surfaces high-impact action.
-3. User clicks Confirm or Deny.
-4. Browser tool tab shows live session.
-5. User selects “Take Over” to pause the agent.
-6. “Resume Agent” returns control to the agent.
-
-### Login Flow (/api/v1/auth/login + /verify)
-1. User clicks Identity chip when signed out.
-2. Login modal collects email + password.
-3. Submit POST `/api/v1/auth/login`.
-4. Store returned JWT securely.
-5. POST `/api/v1/auth/verify` with JWT.
-6. Update identity chip to “Signed in as …” with logout.
-7. Show placeholder subscription status panel.
-
-### Schedule Task from Message
-1. User clicks “Schedule” on assistant message.
-2. Schedule card prompts one-time/recurring.
-3. User confirms schedule.
-4. Confirmation card appears in chat.
-5. Task is listed in Settings → Tasks.
-
-## Implementation Plan (Phased Rollout)
-
-### Phase 1: Chat-First Layout (Minimal Refactor)
-- Replace dashboard tiles with chat timeline + sidebar.
-- Add top bar chips and composer action menu.
-- Keep existing content as message samples.
-
-### Phase 2: Agent Mode Right Panel
-- Add Run Log, Confirmations, Tools, Canvas tabs.
-- Introduce takeover/resume UX and guardrails indicators.
-
-### Phase 3: Auth Integration
-- Implement login modal calling `/api/v1/auth/login` and `/api/v1/auth/verify`.
-- Store JWT securely and hydrate identity chip.
-- Add logout handling and subscription placeholder.
-
-### Phase 4: Tasks + Providers
-- Implement task scheduling UI and Settings → Tasks list.
-- Add Providers panel and connection test UI.
+### Scheduling
+1. Click “Schedule” on an assistant response.
+2. Configure cadence and instructions.
+3. Task appears in the schedules list and can be toggled.
 
 ## Implementation Status Note
 Completed pre-commit steps: Verified API implementation (/api/v1/auth/login and /verify) using a test script. Cleaned up test artifacts. Recorded memory of the new API architecture.
