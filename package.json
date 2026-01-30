@@ -12,8 +12,19 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@tailwindcss/postcss": "^4.1.18",
+    "argon2": "^0.44.0",
+    "autoprefixer": "^10.4.23",
+    "body-parser": "^2.2.2",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "lucide-react": "^0.563.0",
+    "postcss": "^8.5.6",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "tailwindcss": "^4.1.18",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",
